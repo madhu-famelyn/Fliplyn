@@ -1,9 +1,9 @@
 fastapi
-uvicorn
+uvicorn[standard]  
 sqlmodel
-psycopg2
+psycopg2-binary     
 python-multipart
-python-jose
+python-jose[cryptography]
 passlib[bcrypt]
 python-dotenv
 pydantic-settings
@@ -12,3 +12,4 @@ bcrypt==3.2.0
 fastapi-pagination
 twilio
 pydantic[email]
+alembic
