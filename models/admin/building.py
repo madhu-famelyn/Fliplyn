@@ -1,7 +1,8 @@
 import uuid
 from sqlalchemy import Column, String, ForeignKey, JSON
 from sqlalchemy.orm import relationship
-from models.base import Base  
+from config.db.session import Base
+
 
 class Building(Base):
     __tablename__ = "buildings"

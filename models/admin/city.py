@@ -1,7 +1,7 @@
 import uuid
 from sqlalchemy import Column, String, ForeignKey
 from sqlalchemy.orm import relationship
-from models.base import Base
+from config.db.session import Base
 from models.admin.admin import Admin
 from models.admin.country import CountrySelection
 from models.admin.state import State

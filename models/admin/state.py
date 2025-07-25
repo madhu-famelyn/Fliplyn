@@ -1,7 +1,7 @@
 import uuid
 from sqlalchemy import Column, String, ForeignKey
 from sqlalchemy.orm import relationship
-from models.base import Base
+from config.db.session import Base
 
 
 class State(Base):

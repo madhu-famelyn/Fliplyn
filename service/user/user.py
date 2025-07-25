@@ -118,7 +118,7 @@
 
 from sqlalchemy.orm import Session
 from models.user.user import User
-from schemas.user.user import UserSignup, OTPRequest, OTPVerify, UserOut
+from schemas.user.user import UserSignup, OTPRequest, OTPVerify, UserOut, UserUpdate
 from service.otp_service import generate_otp, send_sms_otp, send_email_otp
 from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException
@@ -213,3 +213,47 @@ def get_user_by_id(db: Session, user_id: str) -> UserOut:
         raise HTTPException(status_code=404, detail="User not found.")
     
     return user
+
+
+
+def update_user(db: Session, user_id: str, user_update: UserUpdate) -> User:
+    """Updates an existing user's details."""
+    user = db.query(User).filter(User.id == user_id).first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    try:
+        if user_update.name is not None:
+            user.name = user_update.name
+        if user_update.company_name is not None:
+            user.company_name = user_update.company_name
+        if user_update.company_email is not None:
+            user.company_email = user_update.company_email
+        if user_update.phone_number is not None:
+            user.phone_number = user_update.phone_number
+
+        db.commit()
+        db.refresh(user)
+        return user
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Failed to update user {user_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update user.")
+
+
+def delete_user(db: Session, user_id: str) -> str:
+    """Deletes a user by ID."""
+    user = db.query(User).filter(User.id == user_id).first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    try:
+        db.delete(user)
+        db.commit()
+        return "User deleted successfully."
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Failed to delete user {user_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to delete user.")

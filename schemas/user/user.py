@@ -55,3 +55,9 @@ class LoginVerify(BaseModel):
     phone_number: str | None = None
     company_email: EmailStr | None = None
     otp: str
+
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    company_name: Optional[str] = None
+    company_email: Optional[EmailStr] = None
+    phone_number: Optional[constr(min_length=10, max_length=15)] = None

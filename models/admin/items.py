@@ -4,7 +4,8 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.types import DateTime
 from sqlalchemy.sql import func
 
-from models.base import Base
+from config.db.session import Base
+
 
 
 class Item(Base):

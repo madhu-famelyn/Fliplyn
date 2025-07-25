@@ -8,7 +8,7 @@ from config.db.session import get_db
 from schemas.admin.items import ItemCreate, ItemOut , ItemUpdate # your Pydantic models
 from schemas.admin.items import ItemAvailabilityUpdate  # ✅ This schema handles only is_available
 from service.admin.item import update_item_availability
-from service.admin.item import create_item_with_image , update_item, delete_item, get_items_by_category_id, get_items_by_category_and_availability, get_item_by_id , get_items_by_stall_id
+from service.admin.item import create_item_with_image , update_item, delete_item, get_items_by_category_id, get_items_by_category_and_availability, get_item_by_id , get_items_by_stall_id, get_items_by_building_id
 from fastapi import Query, status
 from typing import List
 
@@ -103,3 +103,9 @@ def fetch_item_by_id(item_id: UUID, db: Session = Depends(get_db)):
 @item_router.get("/stall/{stall_id}", response_model=List[ItemOut])
 def fetch_items_by_stall_id(stall_id: UUID, db: Session = Depends(get_db)):
     return get_items_by_stall_id(stall_id=stall_id, db=db)
+
+
+
+@item_router.get("/building/{building_id}", response_model=List[ItemOut])
+def fetch_items_by_building_id(building_id: UUID, db: Session = Depends(get_db)):
+    return get_items_by_building_id(building_id=building_id, db=db)

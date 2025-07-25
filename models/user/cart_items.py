@@ -3,7 +3,7 @@
 import uuid
 from sqlalchemy import Column, String, ForeignKey, Integer, Float
 from sqlalchemy.orm import relationship
-from models.base import Base
+from config.db.session import Base
 
 
 class CartItem(Base):

@@ -170,3 +170,16 @@ def get_items_by_stall_id(stall_id: UUID, db: Session) -> List[Item]:
         )
     
     return items
+
+
+
+def get_items_by_building_id(building_id: UUID, db: Session) -> List[Item]:
+    items = db.query(Item).filter(Item.building_id == str(building_id)).all()
+    
+    if not items:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No items found for this building"
+        )
+    
+    return items
