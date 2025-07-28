@@ -14,3 +14,5 @@ from models.user.cart import Cart  # Import your cart model
 from models.user.cart_items import CartItem  # Import your cart item model
 from models.user.wallet import Wallet  # Import your wallet model
 from models.user.order import Order  # Import your order model
+from models.user.wallet_group import WalletGroup
+from models.user.wallet_history import WalletTransaction

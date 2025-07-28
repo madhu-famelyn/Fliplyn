@@ -30,4 +30,6 @@ class Building(Base):
 
 
     wallets = relationship("Wallet", back_populates="building")
+    wallet_groups = relationship("WalletGroup", back_populates="building", cascade="all, delete")
+
 

@@ -37,7 +37,7 @@ def create_order(db: Session, payload: OrderCreate) -> Order:
         })
         total += item_total
 
-    # ✅ Deduct from wallet if needed
+    # ✅ Deduct from wallet and create transaction if requested
     if payload.pay_with_wallet:
         wallet = db.query(Wallet).filter(Wallet.user_id == payload.user_id).first()
         if not wallet:
@@ -50,7 +50,20 @@ def create_order(db: Session, payload: OrderCreate) -> Order:
         db.commit()
         db.refresh(wallet)
 
-    # ✅ Create order entry
+        # ✅ Create WalletTransaction (debit)
+        wallet_txn = WalletTransaction(
+            id=str(uuid.uuid4()),
+            user_id=user.id,
+            wallet_id=wallet.id,
+            transaction_type="debit",
+            amount=total,
+            description="Order payment",
+            order_details=item_summary,
+            timestamp=datetime.utcnow()
+        )
+        db.add(wallet_txn)
+
+    # ✅ Create Order
     new_order = Order(
         id=str(uuid.uuid4()),
         user_id=user.id,
@@ -65,6 +78,7 @@ def create_order(db: Session, payload: OrderCreate) -> Order:
     db.add(new_order)
     db.commit()
     db.refresh(new_order)
+
     return new_order
 
 
