@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles  # ✅ For serving images
+from fastapi.staticfiles import StaticFiles
 import os
 
 # ✅ Import all routers
@@ -22,7 +22,6 @@ from api.user.wallet import wallet_routers
 from api.user.order import order_router
 from api.user.wallet_group import wallet_router
 
-
 app = FastAPI(
     title="FlipLine Admin Backend",
     version="1.0.0",
@@ -30,21 +29,22 @@ app = FastAPI(
     openapi_url="/openapi.json"
 )
 
-# ✅ Enable CORS for frontend access
+# ✅ CORS Middleware Setup
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
-        "http://localhost:3001",  # ✅ Add this
-        "http://127.0.0.1:3001"   # ✅ Optional but recommended
+        "http://localhost:3001",
+        "http://127.0.0.1:3001",
+        "https://fliplyn-user.onrender.com",
+        "https://fliplyn-customer.onrender.com"
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-
-# ✅ Mount uploaded_images directory to serve media files
+# ✅ Serve uploaded images from /uploaded_images/
 UPLOAD_DIR = "uploaded_images"
 if not os.path.exists(UPLOAD_DIR):
     os.makedirs(UPLOAD_DIR)
@@ -58,12 +58,12 @@ app.include_router(state_router)
 app.include_router(city_router)
 app.include_router(building_router)
 app.include_router(manager_router)
+app.include_router(manager_login_router)
 app.include_router(stall_router)
 app.include_router(category_router)
 app.include_router(item_router)
-app.include_router(user_router) 
-app.include_router(login_router)    
-app.include_router(manager_login_router)
+app.include_router(user_router)
+app.include_router(login_router)
 app.include_router(cart_router)
 app.include_router(wallet_routers)
 app.include_router(order_router)
@@ -98,6 +98,7 @@ app.include_router(wallet_router)
 # from api.user.auth import login_router
 # from api.user.cart import cart_router
 # from api.user.wallet import wallet_router
+# from api.user.wallet import wallet_routers
 # from api.user.order import order_router
 # from api.user.wallet_group import wallet_group
 
@@ -146,6 +147,7 @@ app.include_router(wallet_router)
 # app.include_router(item_router)
 # app.include_router(user_router)
 # app.include_router(login_router)
+# app.include_router(wallet_routers)
 # app.include_router(cart_router)
 # app.include_router(wallet_router)
 # app.include_router(order_router)
