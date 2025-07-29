@@ -37,7 +37,7 @@ app.add_middleware(
         "http://localhost:3001",
         "http://127.0.0.1:3001",
         "https://fliplyn-user.onrender.com",
-        "https://fliplyn-customer.onrender.com",
+        "https://fliplyn-customer.onrender.com"
     ],
     allow_origin_regex="https://.*\.onrender\.com",  # ✅ Matches any subdomain of onrender.com
     allow_credentials=True,
@@ -45,7 +45,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ✅ Serve uploaded images
 UPLOAD_DIR = "uploaded_images"
 if not os.path.exists(UPLOAD_DIR):
     os.makedirs(UPLOAD_DIR)
@@ -53,25 +52,24 @@ if not os.path.exists(UPLOAD_DIR):
 app.mount("/uploaded_images", StaticFiles(directory=UPLOAD_DIR), name="uploaded_images")
 
 # ✅ Include all routers
-app.include_router(admin_router, prefix="/admin")
-app.include_router(auth_router, prefix="/admin")  # /admin/auth/login
-app.include_router(country_router, prefix="/admin")
-app.include_router(state_router, prefix="/admin")
-app.include_router(city_router, prefix="/admin")
-app.include_router(building_router, prefix="/admin")
-app.include_router(manager_router, prefix="/admin")
-app.include_router(manager_login_router, prefix="/admin")
-app.include_router(stall_router, prefix="/admin")
-app.include_router(category_router, prefix="/admin")
-app.include_router(item_router, prefix="/admin")
+app.include_router(admin_router)
+app.include_router(auth_router)  # /admin/auth/login
+app.include_router(country_router)
+app.include_router(state_router)
+app.include_router(city_router)
+app.include_router(building_router)
+app.include_router(manager_router)
+app.include_router(manager_login_router) 
+app.include_router(stall_router)
+app.include_router(category_router)
 
 # ✅ User-side APIs
-app.include_router(user_router, prefix="/user")
-app.include_router(login_router, prefix="/user")
-app.include_router(cart_router, prefix="/user")
-app.include_router(wallet_routers, prefix="/user")
-app.include_router(order_router, prefix="/user")
-app.include_router(wallet_router, prefix="/user")
+app.include_router(user_router)
+app.include_router(login_router)
+app.include_router(cart_router)
+app.include_router(wallet_routers)
+app.include_router(order_router)
+app.include_router(wallet_router)
 
 
 
