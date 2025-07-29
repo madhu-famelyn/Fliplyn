@@ -29,6 +29,7 @@ app = FastAPI(
     openapi_url="/openapi.json"
 )
 
+# ✅ CORS FIX: Allow Render subdomains via regex
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -38,11 +39,11 @@ app.add_middleware(
         "https://fliplyn-user.onrender.com",
         "https://fliplyn-customer.onrender.com",
     ],
+    allow_origin_regex="https://.*\.onrender\.com",  # ✅ Matches any subdomain of onrender.com
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 # ✅ Serve uploaded images
 UPLOAD_DIR = "uploaded_images"
@@ -53,7 +54,7 @@ app.mount("/uploaded_images", StaticFiles(directory=UPLOAD_DIR), name="uploaded_
 
 # ✅ Include all routers
 app.include_router(admin_router, prefix="/admin")
-app.include_router(auth_router, prefix="/admin")  # ✅ Important: Adds /admin/auth/login
+app.include_router(auth_router, prefix="/admin")  # /admin/auth/login
 app.include_router(country_router, prefix="/admin")
 app.include_router(state_router, prefix="/admin")
 app.include_router(city_router, prefix="/admin")
@@ -71,7 +72,6 @@ app.include_router(cart_router, prefix="/user")
 app.include_router(wallet_routers, prefix="/user")
 app.include_router(order_router, prefix="/user")
 app.include_router(wallet_router, prefix="/user")
-
 
 
 
