@@ -23,13 +23,13 @@ from api.user.order import order_router
 from api.user.wallet_group import wallet_router
 
 app = FastAPI(
-    title="FlipLine Admin Backend",
+    title="Fliplyn Admin Backend",
     version="1.0.0",
     docs_url="/docs",
     openapi_url="/openapi.json"
 )
 
-# ✅ CORS Middleware Setup
+# ✅ CORS Middleware Setup - Allow frontend hosted domains
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -37,41 +37,39 @@ app.add_middleware(
         "http://localhost:3001",
         "http://127.0.0.1:3001",
         "https://fliplyn-user.onrender.com",
-        "https://fliplyn-customer.onrender.com"
+        "https://fliplyn-customer.onrender.com",  # ✅ Your customer frontend
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ✅ Serve uploaded images from /uploaded_images/
+# ✅ Serve uploaded images
 UPLOAD_DIR = "uploaded_images"
 if not os.path.exists(UPLOAD_DIR):
     os.makedirs(UPLOAD_DIR)
 app.mount("/uploaded_images", StaticFiles(directory=UPLOAD_DIR), name="uploaded_images")
 
 # ✅ Include all routers
-app.include_router(admin_router)
-app.include_router(auth_router)
-app.include_router(country_router)
-app.include_router(state_router)
-app.include_router(city_router)
-app.include_router(building_router)
-app.include_router(manager_router)
-app.include_router(manager_login_router)
-app.include_router(stall_router)
-app.include_router(category_router)
-app.include_router(item_router)
-app.include_router(user_router)
-app.include_router(login_router)
-app.include_router(cart_router)
-app.include_router(wallet_routers)
-app.include_router(order_router)
-app.include_router(wallet_router)
+app.include_router(admin_router, prefix="/admin")
+app.include_router(auth_router, prefix="/admin")  # ✅ Important: Adds /admin/auth/login
+app.include_router(country_router, prefix="/admin")
+app.include_router(state_router, prefix="/admin")
+app.include_router(city_router, prefix="/admin")
+app.include_router(building_router, prefix="/admin")
+app.include_router(manager_router, prefix="/admin")
+app.include_router(manager_login_router, prefix="/admin")
+app.include_router(stall_router, prefix="/admin")
+app.include_router(category_router, prefix="/admin")
+app.include_router(item_router, prefix="/admin")
 
-
-
-
+# ✅ User-side APIs
+app.include_router(user_router, prefix="/user")
+app.include_router(login_router, prefix="/user")
+app.include_router(cart_router, prefix="/user")
+app.include_router(wallet_routers, prefix="/user")
+app.include_router(order_router, prefix="/user")
+app.include_router(wallet_router, prefix="/user")
 
 
 
