@@ -37,12 +37,13 @@ app.add_middleware(
         "http://localhost:3001",
         "http://127.0.0.1:3001",
         "https://fliplyn-user.onrender.com",
-        "https://fliplyn-customer.onrender.com",  # ✅ Your customer frontend
+        "https://fliplyn-customer.onrender.com",
     ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"],  # ✅ Should allow OPTIONS
+    allow_headers=["*"],  # ✅ Required for custom headers like Content-Type, Authorization
 )
+
 
 # ✅ Serve uploaded images
 UPLOAD_DIR = "uploaded_images"
