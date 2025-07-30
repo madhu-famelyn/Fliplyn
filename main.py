@@ -2,8 +2,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
-
-# ✅ Import all routers
 from api.admin.admin import admin_router
 from api.admin.auth import auth_router
 from api.admin.country import country_router
@@ -22,6 +20,7 @@ from api.user.wallet import wallet_routers
 from api.user.order import order_router
 from api.user.wallet_group import wallet_router
 
+# ✅ App configuration
 app = FastAPI(
     title="Fliplyn Admin Backend",
     version="1.0.0",
@@ -29,7 +28,7 @@ app = FastAPI(
     openapi_url="/openapi.json"
 )
 
-# ✅ CORS FIX: Allow Render subdomains via regex
+# ✅ CORS setup
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -39,17 +38,15 @@ app.add_middleware(
         "https://fliplyn-user.onrender.com",
         "https://fliplyn-customer.onrender.com"
     ],
-    allow_origin_regex="https://.*\.onrender\.com",  # ✅ Matches any subdomain of onrender.com
+    allow_origin_regex=r"https://.*\.onrender\.com",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-UPLOAD_DIR = "uploaded_images"
-if not os.path.exists(UPLOAD_DIR):
-    os.makedirs(UPLOAD_DIR)
-
-app.mount("/uploaded_images", StaticFiles(directory=UPLOAD_DIR), name="uploaded_images")
+# ✅ Static image serving
+UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "uploaded_images")
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # ✅ Include all routers
 app.include_router(admin_router)
@@ -62,6 +59,7 @@ app.include_router(manager_router)
 app.include_router(manager_login_router) 
 app.include_router(stall_router)
 app.include_router(category_router)
+app.include_router(item_router)
 
 # ✅ User-side APIs
 app.include_router(user_router)
