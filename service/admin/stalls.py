@@ -29,7 +29,7 @@ def save_image_to_disk(file: UploadFile) -> str:
         raise HTTPException(status_code=500, detail=f"Failed to save image: {str(e)}")
 
     # ✅ Return relative public path
-    return f"/uploaded_images/stalls/{filename}"
+    return f"uploaded_images/stalls/{filename}"
 
 def create_stall(
     db: Session,
