@@ -10,8 +10,9 @@ from models.admin.admin import Admin
 from models.admin.manager import Manager
 
 
-BASE_UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "../../uploaded_images/stalls")
-os.makedirs(BASE_UPLOAD_DIR, exist_ok=True)
+STALL_IMAGE_DIR = os.path.join(os.path.dirname(__file__), "../../uploaded_images/stalls")
+STALL_IMAGE_DIR = os.path.abspath(STALL_IMAGE_DIR)  # normalize to absolute path
+os.makedirs(STALL_IMAGE_DIR, exist_ok=True)
 
 def save_image_to_disk(file: UploadFile) -> str:
     if not file.content_type.startswith("image/"):
@@ -19,7 +20,7 @@ def save_image_to_disk(file: UploadFile) -> str:
 
     file_ext = file.filename.split('.')[-1]
     filename = f"{uuid.uuid4()}.{file_ext}"
-    file_path = os.path.join(BASE_UPLOAD_DIR, filename)
+    file_path = os.path.join(STALL_IMAGE_DIR, filename)
 
     try:
         with open(file_path, "wb") as buffer:
@@ -27,7 +28,7 @@ def save_image_to_disk(file: UploadFile) -> str:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to save image: {str(e)}")
 
-    # ✅ Return a public-facing URL path
+    # ✅ Return relative public path
     return f"/uploaded_images/stalls/{filename}"
 
 def create_stall(

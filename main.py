@@ -52,8 +52,9 @@ UPLOAD_DIR = os.path.join(BASE_DIR, "uploaded_images")
 STALL_IMAGE_DIR = os.path.join(UPLOAD_DIR, "stalls")
 os.makedirs(STALL_IMAGE_DIR, exist_ok=True)
 
-# Mount the base upload directory so files like /uploaded_images/stalls/xxx.jpg are public
+# ✅ Serve /uploaded_images/*
 app.mount("/uploaded_images", StaticFiles(directory=UPLOAD_DIR), name="uploaded_images")
+
 
 # ✅ Include all routers
 app.include_router(admin_router)
