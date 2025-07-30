@@ -9,10 +9,9 @@ from models.admin.building import Building
 from models.admin.admin import Admin
 from models.admin.manager import Manager
 
-# Ensure upload directory exists
-UPLOAD_DIR = "uploaded_images/stalls"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+BASE_UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "../../uploaded_images/stalls")
+os.makedirs(BASE_UPLOAD_DIR, exist_ok=True)
 
 def save_image_to_disk(file: UploadFile) -> str:
     if not file.content_type.startswith("image/"):
@@ -20,7 +19,7 @@ def save_image_to_disk(file: UploadFile) -> str:
 
     file_ext = file.filename.split('.')[-1]
     filename = f"{uuid.uuid4()}.{file_ext}"
-    file_path = os.path.join(UPLOAD_DIR, filename)
+    file_path = os.path.join(BASE_UPLOAD_DIR, filename)
 
     try:
         with open(file_path, "wb") as buffer:
@@ -28,8 +27,8 @@ def save_image_to_disk(file: UploadFile) -> str:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to save image: {str(e)}")
 
-    return file_path.replace("\\", "/")  # normalize path for consistency
-
+    # ✅ Return a public-facing URL path
+    return f"/uploaded_images/stalls/{filename}"
 
 def create_stall(
     db: Session,
@@ -40,23 +39,24 @@ def create_stall(
     manager_id: str = None,
     file: UploadFile = None
 ):
-    # 🛠️ Convert empty strings to None
     admin_id = admin_id or None
     manager_id = manager_id or None
 
     if not admin_id and not manager_id:
         raise HTTPException(status_code=400, detail="Either admin_id or manager_id must be provided")
 
-    # Validate building
+    # ✅ Validate building
     building = db.query(Building).filter(Building.id == building_id).first()
     if not building:
         raise HTTPException(status_code=404, detail="Building not found")
 
+    # ✅ Validate admin (if provided)
     if admin_id:
         admin = db.query(Admin).filter(Admin.id == admin_id).first()
         if not admin:
             raise HTTPException(status_code=404, detail="Admin not found")
 
+    # ✅ Validate manager (if provided)
     if manager_id:
         manager = db.query(Manager).filter(Manager.id == manager_id).first()
         if not manager:

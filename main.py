@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
+
 from api.admin.admin import admin_router
 from api.admin.auth import auth_router
 from api.admin.country import country_router
@@ -13,6 +14,7 @@ from api.admin.manager_login import manager_login_router
 from api.admin.stalls import stall_router
 from api.admin.category import category_router
 from api.admin.items import item_router
+
 from api.user.user import user_router
 from api.user.auth import login_router
 from api.user.cart import cart_router
@@ -44,19 +46,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ✅ Static image serving
-UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "uploaded_images")
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+# ✅ Static file serving
+BASE_DIR = os.path.dirname(__file__)
+UPLOAD_DIR = os.path.join(BASE_DIR, "uploaded_images")
+STALL_IMAGE_DIR = os.path.join(UPLOAD_DIR, "stalls")
+os.makedirs(STALL_IMAGE_DIR, exist_ok=True)
+
+# Mount the base upload directory so files like /uploaded_images/stalls/xxx.jpg are public
+app.mount("/uploaded_images", StaticFiles(directory=UPLOAD_DIR), name="uploaded_images")
 
 # ✅ Include all routers
 app.include_router(admin_router)
-app.include_router(auth_router)  # /admin/auth/login
+app.include_router(auth_router)
 app.include_router(country_router)
 app.include_router(state_router)
 app.include_router(city_router)
 app.include_router(building_router)
 app.include_router(manager_router)
-app.include_router(manager_login_router) 
+app.include_router(manager_login_router)
 app.include_router(stall_router)
 app.include_router(category_router)
 app.include_router(item_router)
@@ -69,14 +76,11 @@ app.include_router(wallet_routers)
 app.include_router(order_router)
 app.include_router(wallet_router)
 
-
-
 # ✅ For local development only
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.environ.get("PORT", 8000))  # Render will set PORT automatically
+    port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
-
 
 
 
