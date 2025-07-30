@@ -53,7 +53,7 @@ STALL_IMAGE_DIR = os.path.join(UPLOAD_DIR, "stalls")
 os.makedirs(STALL_IMAGE_DIR, exist_ok=True)
 
 # ✅ Serve /uploaded_images/*
-app.mount("uploaded_images", StaticFiles(directory=UPLOAD_DIR), name="uploaded_images")
+app.mount("/uploaded_images", StaticFiles(directory=UPLOAD_DIR), name="uploaded_images")
 
 
 # ✅ Include all routers
