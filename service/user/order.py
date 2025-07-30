@@ -6,6 +6,7 @@ from models.admin.items import Item
 from models.admin.stalls import Stall
 from models.user.wallet import Wallet
 from models.user.order import Order
+from models.user.wallet_history import WalletTransaction
 from schemas.user.order import OrderCreate, OrderItem
 from datetime import datetime
 import uuid
@@ -58,8 +59,8 @@ def create_order(db: Session, payload: OrderCreate) -> Order:
             transaction_type="debit",
             amount=total,
             description="Order payment",
-            order_details=item_summary,
-            timestamp=datetime.utcnow()
+            item_details=item_summary,  # ✅ correct field name
+            created_at=datetime.utcnow()  # ✅ correct field name
         )
         db.add(wallet_txn)
 
