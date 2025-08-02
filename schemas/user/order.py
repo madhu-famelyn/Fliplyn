@@ -34,16 +34,17 @@ class OrderOut(BaseModel):
     user_id: str
     user_phone: str
     user_email: str
-    order_details: List[OrderItemDetail]  # ✅ Corrected to List
+    order_details: List[OrderItemDetail]
     total_amount: float
     paid_with_wallet: bool
-    created_datetime: datetime
+    token_number: Optional[int]  # ✅ Added token number
+    created_datetime: datetime  # IST aware datetime
 
     class Config:
         orm_mode = True
 
 
-
+# 📤 Response item with extra stall info
 class OrderItemOut(BaseModel):
     item_id: str
     name: str
@@ -55,6 +56,8 @@ class OrderItemOut(BaseModel):
     stall_name: Optional[str]
     stall_image_url: Optional[str]
 
+
+# 📤 Detailed order response with stall info
 class OrderDetailedOut(BaseModel):
     id: str
     user_id: str
@@ -63,7 +66,8 @@ class OrderDetailedOut(BaseModel):
     order_details: List[OrderItemOut]
     total_amount: float
     paid_with_wallet: bool
-    created_datetime: datetime
+    token_number: Optional[int]  # ✅ Added token number
+    created_datetime: datetime  # IST aware datetime
 
     class Config:
         orm_mode = True

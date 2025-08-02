@@ -7,9 +7,18 @@ from models.admin.stalls import Stall
 from models.user.wallet import Wallet
 from models.user.order import Order
 from models.user.wallet_history import WalletTransaction
-from schemas.user.order import OrderCreate, OrderItem
+from schemas.user.order import OrderCreate
 from datetime import datetime
 import uuid
+import pytz
+
+# ✅ IST timezone setup
+IST = pytz.timezone("Asia/Kolkata")
+
+
+def get_next_token_number(db: Session) -> int:
+    last_order = db.query(Order).order_by(Order.token_number.desc()).first()
+    return (last_order.token_number + 1) if last_order and last_order.token_number else 1
 
 
 def create_order(db: Session, payload: OrderCreate) -> Order:
@@ -59,10 +68,13 @@ def create_order(db: Session, payload: OrderCreate) -> Order:
             transaction_type="debit",
             amount=total,
             description="Order payment",
-            item_details=item_summary,  # ✅ correct field name
-            created_at=datetime.utcnow()  # ✅ correct field name
+            item_details=item_summary,
+            created_at=datetime.now(IST)
         )
         db.add(wallet_txn)
+
+    # ✅ Get next token number
+    next_token = get_next_token_number(db)
 
     # ✅ Create Order
     new_order = Order(
@@ -73,7 +85,8 @@ def create_order(db: Session, payload: OrderCreate) -> Order:
         order_details=item_summary,
         total_amount=total,
         paid_with_wallet=payload.pay_with_wallet,
-        created_datetime=datetime.utcnow()
+        token_number=next_token,
+        created_datetime=datetime.now(IST)
     )
 
     db.add(new_order)
@@ -83,13 +96,8 @@ def create_order(db: Session, payload: OrderCreate) -> Order:
     return new_order
 
 
-
 def get_orders_by_user_id(db: Session, user_id: str) -> List[Order]:
-    orders = db.query(Order).filter(Order.user_id == user_id).order_by(Order.created_datetime.desc()).all()
-    return orders
-
-
-
+    return db.query(Order).filter(Order.user_id == user_id).order_by(Order.created_datetime.desc()).all()
 
 
 def get_order_by_id(db: Session, order_id: str):
@@ -101,7 +109,7 @@ def get_order_by_id(db: Session, order_id: str):
     for item_entry in order.order_details:
         item = db.query(Item).filter(Item.id == item_entry["item_id"]).first()
         if not item:
-            continue  # skip if item not found
+            continue
 
         stall = db.query(Stall).filter(Stall.id == item.stall_id).first()
         stall_name = stall.name if stall else "Unknown Stall"
@@ -127,6 +135,7 @@ def get_order_by_id(db: Session, order_id: str):
         "order_details": enriched_items,
         "total_amount": order.total_amount,
         "paid_with_wallet": order.paid_with_wallet,
+        "token_number": order.token_number,
         "created_datetime": order.created_datetime
     }
 
@@ -170,6 +179,7 @@ def get_orders_by_user_id_enriched(db: Session, user_id: str):
             "order_details": enriched_items,
             "total_amount": order.total_amount,
             "paid_with_wallet": order.paid_with_wallet,
+            "token_number": order.token_number,
             "created_datetime": order.created_datetime
         })
 

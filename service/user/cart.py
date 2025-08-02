@@ -107,7 +107,11 @@ def get_user_cart(db: Session, user_id: str):
     cart = db.query(Cart).filter(Cart.user_id == user_id).first()
     if not cart:
         raise HTTPException(status_code=404, detail="Cart not found")
+
+    # Sort items by ID for consistency
+    cart.items.sort(key=lambda x: x.id)
     return cart
+
 
 
 

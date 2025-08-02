@@ -1,9 +1,12 @@
-# models/user/order.py
-
-from sqlalchemy import Column, String, Float, Boolean, DateTime, ForeignKey, JSON, func
+from sqlalchemy import Column, String, Float, Boolean, DateTime, ForeignKey, JSON, Integer
 from sqlalchemy.orm import relationship
 from config.db.session import Base
+from datetime import datetime
+import pytz
 import uuid
+
+# Set IST timezone
+IST = pytz.timezone('Asia/Kolkata')
 
 class Order(Base):
     __tablename__ = "orders"
@@ -14,12 +17,22 @@ class Order(Base):
     user_email = Column(String, nullable=False)
     user_phone = Column(String, nullable=False)
 
-    order_details = Column(JSON, nullable=False)  # list of items with price, qty, name, desc
+    order_details = Column(JSON, nullable=False)  # List of items with price, qty, name, desc
     total_amount = Column(Float, nullable=False)
 
     paid_with_wallet = Column(Boolean, default=False)
 
-    created_datetime = Column(DateTime(timezone=True), server_default=func.now())
-    updated_datetime = Column(DateTime(timezone=True), onupdate=func.now())
+    token_number = Column(Integer, nullable=False, index=True)
+
+    created_datetime = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(IST)
+    )
+
+    updated_datetime = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(IST),
+        onupdate=lambda: datetime.now(IST)
+    )
 
     user = relationship("User", backref="orders")
