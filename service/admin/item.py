@@ -17,25 +17,55 @@ from models.admin.building import Building
 from models.admin.stalls import Stall
 from models.admin.category import Category
 
-UPLOAD_DIR = "uploaded_images/items"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+# ✅ Added imports
+import io
+from PIL import Image
+import boto3
+from dotenv import load_dotenv
 
-def save_item_image(file: UploadFile) -> str:
+# ✅ Load AWS credentials
+load_dotenv()
+AWS_ACCESS_KEY = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+S3_BUCKET_NAME = os.getenv("AWS_BUCKET_NAME")
+S3_REGION = os.getenv("AWS_REGION", "ap-south-1")
+
+
+# ✅ Upload image to S3 as WebP
+def upload_item_image_to_s3(file: UploadFile) -> str:
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="Invalid file type. Please upload an image.")
-    
-    file_ext = file.filename.split('.')[-1]
-    filename = f"{uuid.uuid4()}.{file_ext}"
-    file_path = os.path.join(UPLOAD_DIR, filename)
+
+    session = boto3.session.Session(
+        aws_access_key_id=AWS_ACCESS_KEY,
+        aws_secret_access_key=AWS_SECRET_KEY,
+        region_name=S3_REGION,
+    )
+    s3 = session.client("s3")
+
+    filename = f"{uuid.uuid4()}.webp"
 
     try:
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-    except Exception:
-        raise HTTPException(status_code=500, detail="Failed to save image")
+        image = Image.open(file.file)
+        webp_buffer = io.BytesIO()
+        image.convert("RGB").save(webp_buffer, format="WEBP", quality=85)
+        webp_buffer.seek(0)
 
-    return file_path.replace("\\", "/")
+        s3.upload_fileobj(
+            webp_buffer,
+            S3_BUCKET_NAME,
+            filename,
+            ExtraArgs={
+                "ContentType": "image/webp"
+            }
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Upload to S3 failed: {str(e)}")
 
+    return f"https://{S3_BUCKET_NAME}.s3.{S3_REGION}.amazonaws.com/{filename}"
+
+
+# ✅ Create Item with image uploaded to S3
 def create_item_with_image(
     db: Session,
     item_data: ItemCreate,
@@ -53,7 +83,8 @@ def create_item_with_image(
     else:
         final_price = base_price
 
-    image_url = save_item_image(file) if file else None
+    # ✅ Upload to S3 in WebP format
+    image_url = upload_item_image_to_s3(file) if file else None
 
     item = Item(
         name=item_data.name,
@@ -68,13 +99,16 @@ def create_item_with_image(
         category_id=item_data.category_id,
         admin_id=item_data.admin_id,
         manager_id=item_data.manager_id,
-        is_available=item_data.is_available  # ✅ Included here
+        is_available=item_data.is_available
     )
 
     db.add(item)
     db.commit()
     db.refresh(item)
     return item
+
+
+
 
 def update_item(item_id: UUID, item_data: ItemUpdate, db: Session):
     # Convert UUID to string if DB stores item.id as VARCHAR

@@ -14,3 +14,5 @@ twilio
 pydantic[email]
 alembic
 pytz
+Pillow>=9.0.0
+boto3

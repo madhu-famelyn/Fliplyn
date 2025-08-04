@@ -1,35 +1,66 @@
 import uuid
 import os
-import shutil
 from fastapi import HTTPException, UploadFile
 from sqlalchemy.orm import Session
+from dotenv import load_dotenv
+import boto3
+# ✅ Upload Image to S3
+from PIL import Image
+import io
+
 
 from models.admin.stalls import Stall
 from models.admin.building import Building
 from models.admin.admin import Admin
 from models.admin.manager import Manager
 
+load_dotenv()
 
-STALL_IMAGE_DIR = os.path.join(os.path.dirname(__file__), "../../uploaded_images/stalls")
-STALL_IMAGE_DIR = os.path.abspath(STALL_IMAGE_DIR)  # normalize to absolute path
-os.makedirs(STALL_IMAGE_DIR, exist_ok=True)
+# Load from .env
+AWS_ACCESS_KEY = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+S3_BUCKET_NAME = os.getenv("AWS_BUCKET_NAME")
+S3_REGION = os.getenv("AWS_REGION", "ap-south-1")
 
-def save_image_to_disk(file: UploadFile) -> str:
+
+
+
+# ✅ Upload Image to S3 after converting to WebP
+def upload_image_to_s3(file: UploadFile) -> str:
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="Invalid file type. Please upload an image.")
 
-    file_ext = file.filename.split('.')[-1]
-    filename = f"{uuid.uuid4()}.{file_ext}"
-    file_path = os.path.join(STALL_IMAGE_DIR, filename)
+    session = boto3.session.Session(
+        aws_access_key_id=AWS_ACCESS_KEY,
+        aws_secret_access_key=AWS_SECRET_KEY,
+        region_name=S3_REGION,
+    )
+    s3 = session.client("s3")
+
+    # Generate a WebP filename
+    filename = f"{uuid.uuid4()}.webp"
 
     try:
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to save image: {str(e)}")
+        # ✅ Convert to WebP using Pillow
+        image = Image.open(file.file)
+        webp_buffer = io.BytesIO()
+        image.convert("RGB").save(webp_buffer, format="WEBP", quality=85)
+        webp_buffer.seek(0)
 
-    # ✅ Return relative public path
-    return f"uploaded_images/stalls/{filename}"
+        # ✅ Upload WebP image
+        s3.upload_fileobj(
+            webp_buffer,
+            S3_BUCKET_NAME,
+            filename,
+            ExtraArgs={
+                "ContentType": "image/webp"
+            }
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Upload to S3 failed: {str(e)}")
+
+    return f"https://{S3_BUCKET_NAME}.s3.{S3_REGION}.amazonaws.com/{filename}"
+
 
 def create_stall(
     db: Session,
@@ -46,30 +77,28 @@ def create_stall(
     if not admin_id and not manager_id:
         raise HTTPException(status_code=400, detail="Either admin_id or manager_id must be provided")
 
-    # ✅ Validate building
     building = db.query(Building).filter(Building.id == building_id).first()
     if not building:
         raise HTTPException(status_code=404, detail="Building not found")
 
-    # ✅ Validate admin (if provided)
     if admin_id:
         admin = db.query(Admin).filter(Admin.id == admin_id).first()
         if not admin:
             raise HTTPException(status_code=404, detail="Admin not found")
 
-    # ✅ Validate manager (if provided)
     if manager_id:
         manager = db.query(Manager).filter(Manager.id == manager_id).first()
         if not manager:
             raise HTTPException(status_code=404, detail="Manager not found")
 
-    image_path = save_image_to_disk(file) if file else None
+    # ✅ Upload image to S3 if file exists
+    image_url = upload_image_to_s3(file) if file else None
 
     new_stall = Stall(
         id=str(uuid.uuid4()),
         name=name,
         description=description,
-        image_url=image_path,
+        image_url=image_url,
         building_id=building_id,
         admin_id=admin_id,
         manager_id=manager_id

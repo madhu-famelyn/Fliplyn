@@ -1,37 +1,63 @@
 import uuid
 import os
 import shutil
+from dotenv import load_dotenv
+import boto3
 from fastapi import HTTPException, UploadFile
 from sqlalchemy.orm import Session
-
+import io     
+from PIL import Image  
 from models.admin.category import Category
 from models.admin.admin import Admin
 from models.admin.manager import Manager
 from models.admin.building import Building
 from models.admin.stalls import Stall
 
-# Make sure this directory exists
-UPLOAD_DIR = "uploaded_images/categories"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+load_dotenv()
+
+# AWS Configuration
+AWS_ACCESS_KEY = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+S3_BUCKET_NAME = os.getenv("AWS_BUCKET_NAME")
+S3_REGION = os.getenv("AWS_REGION", "ap-south-1")
 
 
-def save_category_image(file: UploadFile) -> str:
+# ✅ Convert and Upload Image to S3 in WebP format
+def upload_category_image_to_s3(file: UploadFile) -> str:
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="Invalid file type. Please upload an image.")
 
-    file_ext = file.filename.split('.')[-1]
-    filename = f"{uuid.uuid4()}.{file_ext}"
-    file_path = os.path.join(UPLOAD_DIR, filename)
+    session = boto3.session.Session(
+        aws_access_key_id=AWS_ACCESS_KEY,
+        aws_secret_access_key=AWS_SECRET_KEY,
+        region_name=S3_REGION,
+    )
+    s3 = session.client("s3")
+
+    filename = f"{uuid.uuid4()}.webp"
 
     try:
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-    except Exception:
-        raise HTTPException(status_code=500, detail="Failed to save image")
+        image = Image.open(file.file)
+        webp_buffer = io.BytesIO()
+        image.convert("RGB").save(webp_buffer, format="WEBP", quality=85)
+        webp_buffer.seek(0)
 
-    return file_path.replace("\\", "/")
+        s3.upload_fileobj(
+            webp_buffer,
+            S3_BUCKET_NAME,
+            filename,
+            ExtraArgs={
+                "ContentType": "image/webp"
+            }
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Upload to S3 failed: {str(e)}")
+
+    return f"https://{S3_BUCKET_NAME}.s3.{S3_REGION}.amazonaws.com/{filename}"
 
 
+# ✅ Create Category
 def create_category(
     db: Session,
     name: str,
@@ -44,7 +70,7 @@ def create_category(
     if not admin_id and not manager_id:
         raise HTTPException(status_code=400, detail="Either admin_id or manager_id must be provided")
 
-    # Validate relationships
+    # Validation checks
     if admin_id and not db.query(Admin).filter(Admin.id == admin_id).first():
         raise HTTPException(status_code=404, detail="Admin not found")
 
@@ -57,7 +83,8 @@ def create_category(
     if not db.query(Stall).filter(Stall.id == stall_id).first():
         raise HTTPException(status_code=404, detail="Stall not found")
 
-    image_url = save_category_image(file) if file else None
+    # ✅ Upload to S3 in WebP format
+    image_url = upload_category_image_to_s3(file) if file else None
 
     new_category = Category(
         id=str(uuid.uuid4()),
@@ -68,12 +95,11 @@ def create_category(
         admin_id=admin_id,
         manager_id=manager_id if manager_id else None,
     )
- 
+
     db.add(new_category)
     db.commit()
     db.refresh(new_category)
     return new_category
-
 
 def get_all_categories(db: Session):
     return db.query(Category).all()
